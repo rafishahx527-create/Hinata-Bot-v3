@@ -57,9 +57,8 @@ module.exports = {
 
                 try {
                         let imageUrl;
-                        let blurLevel = 50;
+                        let blurLevel = 40;
 
-                        // Logic to detect Image and Level
                         if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) {
                                 imageUrl = event.messageReply.attachments[0].url;
                                 if (args[0] && !isNaN(args[0])) {
