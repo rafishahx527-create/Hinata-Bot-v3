@@ -1,45 +1,77 @@
 const axios = require("axios");
 
 const mahmud = async () => {
-  const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
-  return base.data.mahmud;
+        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
+        return base.data.mahmud;
 };
 
-/**
-* @author MahMUD
-* @author: do not delete it
-*/
-
 module.exports = {
-  config: {
-    name: "animeinfo",
-    aliases: ["aniinfo"],
-    version: "1.7",
-    category: "anime",
-    description: "Anime info fetcher",
-    usage: "af <anime name>",
-    cooldown: 5,
-    author: "MahMUD"
-  },
+        config: {
+                name: "animeinfo",
+                aliases: ["aniinfo"],
+                version: "1.7",
+                author: "MahMUD",
+                countDown: 5,
+                role: 0,
+                description: {
+                        bn: "যেকোনো এনিমে সম্পর্কে বিস্তারিত তথ্য জানুন",
+                        en: "Get detailed information about any anime",
+                        vi: "Lấy thông tin chi tiết về bất kỳ bộ anime nào"
+                },
+                category: "anime",
+                guide: {
+                        bn: '   {pn} <এনিমে নাম>: বিস্তারিত জানতে নাম লিখুন',
+                        en: '   {pn} <anime name>: Provide the anime name to get details',
+                        vi: '   {pn} <tên anime>: Cung cấp tên anime để lấy chi tiết'
+                }
+        },
 
-  onStart: async function ({ api, event, args }) {
-    if (!args[0]) return api.sendMessage("⚠️ Please enter an anime name", event.threadID, event.messageID);
+        langs: {
+                bn: {
+                        noInput: "⚠️ বেবি, একটি এনিমে এর নাম তো দাও!",
+                        notFound: "❌ দুঃখিত বেবি, এই এনিমে তথ্য খুঁজে পাওয়া যায়নি।",
+                        error: "× সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
+                },
+                en: {
+                        noInput: "⚠️ Baby, please enter an anime name!",
+                        notFound: "❌ Sorry baby, anime info not found.",
+                        error: "× API error: %1. Contact MahMUD for help."
+                },
+                vi: {
+                        noInput: "⚠️ Cưng ơi, vui lòng nhập tên anime!",
+                        notFound: "❌ Xin lỗi cưng, không tìm thấy thông tin anime này.",
+                        error: "× Lỗi: %1. Liên hệ MahMUD để hỗ trợ."
+                }
+        },
 
-    try {
-      const url = `${await mahmud()}/api/animeinfo?animeName=${encodeURIComponent(args.join(" "))}`;
-      const res = await axios.get(url);
-      const { formatted_message, data } = res.data;
+        onStart: async function ({ api, event, args, message, getLang }) {
+                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
+                if (this.config.author !== authorName) {
+                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
+                }
 
-      if (!res.data || !data) return api.sendMessage("❌ Not found", event.threadID, event.messageID);
+                if (!args[0]) return message.reply(getLang("noInput"));
 
-      api.sendMessage({
-        body: formatted_message,
-        attachment: await global.utils.getStreamFromURL(data.image_url)
-      }, event.threadID, event.messageID);
+                try {
+                        const baseUrl = await mahmud();
+                        const animeName = args.join(" ");
+                        const url = `${baseUrl}/api/animeinfo?animeName=${encodeURIComponent(animeName)}`;
+                        
+                        const res = await axios.get(url);
+                        const { formatted_message, data } = res.data;
 
-    } catch (e) {
-      console.error(e);
-      api.sendMessage("🥹error, contact MahMUD", event.threadID, event.messageID);
-    }
-  }
+                        if (!res.data || !data) return message.reply(getLang("notFound"));
+
+                        const attachment = await global.utils.getStreamFromURL(data.image_url);
+
+                        return message.reply({
+                                body: formatted_message,
+                                attachment: attachment
+                        });
+
+                } catch (err) {
+                        console.error("Anime Info Error:", err);
+                        return message.reply(getLang("error", err.message));
+                }
+        }
 };
